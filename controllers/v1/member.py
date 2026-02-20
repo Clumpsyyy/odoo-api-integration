@@ -1,7 +1,4 @@
-from flask import Blueprint
+from flask import Blueprint, request
 
-member_bp = Blueprint("member", __name__)
-
-@member_bp.route("/checkMember", methods=["POST"])
-def checkMember():
+def checkMember(jsonRequest):
     return {"message": "Member endpoint" }, 200
