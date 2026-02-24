@@ -3,7 +3,6 @@ from flask import Flask
 from routes import auth_bp, member_bp
 import db.odoo_connection as connection
 
-
 #authenticate login and signup
 # from controllers.v1.auth.auth import auth_bp
 # from controllers.v1.member import member_bp
@@ -14,9 +13,9 @@ app = Flask(__name__)
 app.register_blueprint(auth_bp, url_prefix="/api/v1/auth")
 
 #api route for members
-app.register_blueprint(member_bp, url_prefix="/api/v1/member")
+app.register_blueprint(member_bp, url_prefix="/api/v1/membership")
 
-# Test Odoo connection first
+# Test Odoo connection
 try:
     uid, models = connection.connect()
     print("Connected successfully! UID:", uid)

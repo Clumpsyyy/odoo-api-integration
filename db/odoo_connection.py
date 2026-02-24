@@ -19,13 +19,13 @@ def connect():
     if uid:
         print("Authenticated successfully! UID:", uid)
         print("Authenticated successfully! models:", models)
-        print("Authenticated successfully! UID:", ODOO_DB)
-        print("Authenticated successfully! models:", ODOO_PASSWORD)
+        # print("Authenticated successfully! UID:", ODOO_DB)
+        # print("Authenticated successfully! models:", ODOO_PASSWORD)
         # Get Odoo version info
         version_info = common.version()
         print("Odoo version info:", version_info)
     else:
         print("Authentication failed")
     
-    return uid, models, ODOO_DB, ODOO_PASSWORD
+    return uid, models
     
