@@ -1,6 +1,9 @@
 from flask import Blueprint, request
 import utils.validator as validator
-from db.odoo_connection import connect
+import xmlrpc.client
+
+#I will adjust this to return in the connect() function soon
+from db.odoo_connection import connect, ODOO_DB, ODOO_PASSWORD
 
 def signup(jsonRequest):
     
@@ -12,15 +15,15 @@ def signup(jsonRequest):
     validator.validateUser(user_data, application)
 
     #  Connect to Odoo as admin
-    
-    uid, models, ODOO_DB, ODOO_PASSWORD = connect()  # connect() should use admin credentials
+
+    uid, models = connect()  # connect() should use admin credentials
     print ("This is the UID:", uid, "This is the models", models)
     
     #  Create res.users record (login account)
     user_id = models.execute_kw(
-        ODDO_DB,
+        ODOO_DB,
         uid,
-        ODDO_PASSWORD,
+        ODOO_PASSWORD,
         "res.users",
         "create",
         [{
@@ -30,18 +33,18 @@ def signup(jsonRequest):
         }]
     )
 
-    # Create hr.employee record (profile) linked to the user
+    # Create hr.employee record linked to the user
     employee_id = models.execute_kw(
-        ODDO_DB,
+        ODOO_DB,
         uid,
-        ODDO_PASSWORD,
+        ODOO_PASSWORD,
         "hr.employee",
         "create",
         [{
             "name": user_data["name"],
             "work_email": user_data["login"],
-            "user_id": user_id,  # link to the res.users account
-            # You can add additional fields like membership_plan, phone, etc.
+            "user_id": user_id,  
+      
         }]
     )
 
@@ -51,4 +54,34 @@ def signup(jsonRequest):
         "message": "Member signed up successfully"
     }, 201
     
+def login(jsonRequest):
+    user_data = jsonRequest["user"]
+    application = jsonRequest["application"] 
 
+    login = user_data["login"]
+    password = user_data["password"]
+
+    # Connect to Odoo common endpoint
+    common = xmlrpc.client.ServerProxy('http://localhost:8069/xmlrpc/2/common')
+
+    uid = common.authenticate(application, login, password, {})
+
+    if not uid:
+        return {"message": "Invalid login or password"}, 401
+
+    # models = xmlrpc.client.ServerProxy('http://localhost:8069/xmlrpc/2/object')
+    # user_info = models.execute_kw(
+    #     application,
+    #     uid,
+    #     password,
+    #     'res.users',
+    #     'read',
+    #     [uid],
+    #     {'fields': ['id', 'name', 'login']}
+    # )
+
+    return {
+        # "user": user_info,
+        "message": "User logged in successfully"
+    }, 200
+    
