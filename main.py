@@ -1,31 +1,37 @@
-#import necesssary package 
 from flask import Flask
 from routes import auth_bp, member_bp
 import db.odoo_connection as connection
-
-#authenticate login and signup
-# from controllers.v1.auth.auth import auth_bp
-# from controllers.v1.member import member_bp
+from flask_jwt_extended import (
+    JWTManager,
+    create_access_token,
+    jwt_required,
+    get_jwt_identity
+)
 
 app = Flask(__name__)
 
-#api route for authentication
+app.config["JWT_SECRET_KEY"] = "super-secret-key"
+jwt = JWTManager(app)
+# -------------------------
+# Register Blueprints
+# -------------------------
 app.register_blueprint(auth_bp, url_prefix="/api/v1/auth")
-
-#api route for members
 app.register_blueprint(member_bp, url_prefix="/api/v1/membership")
 
-# Test Odoo connection
+# -------------------------
+# Authenticate Odoo Once
+# -------------------------
 try:
-    uid, models = connection.connect()
-    print("Connected successfully! UID:", uid)
+    uid = connection.connect() 
+    if uid:
+        print("Connected to Odoo successfully! UID:", uid)
+    else:
+        print("Odoo authentication failed")
 except Exception as e:
-    print("Connection failed:", e)
-    
-#main
+    print("Odoo connection failed:", str(e))
+
+# -------------------------
+# Run App
+# -------------------------
 if __name__ == "__main__":
     app.run(debug=True)
-    
-    
-    
-    

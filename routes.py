@@ -3,6 +3,7 @@ import controllers.v1.auth.auth as auth
 import controllers.v1.member as member
 import utils.exception_messages as exception_messages
 import utils.validator as validator
+from flask_jwt_extended import jwt_required, get_jwt_identity
 
 auth_bp = Blueprint('auth_bp', __name__)
 
@@ -25,14 +26,17 @@ def createNewUser():
 #Sign In Endpoint
 @auth_bp.route("/login", methods=['POST'])
 def login():
-    return jsonify({"user": auth.login(request.json)})
+    response = auth.login(request.json)
+    return jsonify(response), 201
+    # return jsonify({"user": auth.login(request.json) and access_token})
 
 member_bp = Blueprint('member_bp', __name__)
 
 #Check List of member Endpoint
-@member_bp.route("/check", methods=['POST'])
+@member_bp.route("/check", methods=['GET'])
+@jwt_required()
 def showMember():
-    result = member.ShowMember(request.json)
+    result = member.ShowMember()
     return jsonify({"user": result})
 
 #Add member/ Create member Endpoint

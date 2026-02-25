@@ -10,11 +10,9 @@ def validateRequest(request):
     if not request or not request.get("user") or not request.get("application"):
         abort(400, exception_messages.getMsgRequestInvalid())
 
-
 def validateUser(user, application):
     validateRequiredParametersToCreate(user)
     validateIfUserAlreadyExists(user, application)
-
 
 def validateRequiredParametersToCreate(user):
     name = user.get("name")
@@ -28,7 +26,6 @@ def validateRequiredParametersToCreate(user):
     ):
         abort(400, exception_messages.getMsgRequestInvalid())
 
-
 def validateRequiredParametersToLogin(user):
     login = user.get("login")
     password = user.get("password")
@@ -39,19 +36,16 @@ def validateRequiredParametersToLogin(user):
     ):
         abort(400, exception_messages.getMsgRequestInvalid())
 
-
 def validateIfUserAlreadyExists(user, application):
     # Check by login (email)
     if querys.getQtdByQuery({"login": user.get("login")}, application) > 0:
         abort(400, "User with this login already exists")
-
 
 def isEmailInvalidByRegex(email):
     return re.match(
         r"(^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$)",
         email
     ) is None
-
 
 def validateTokenBeforeRequest(token):
     if not token:

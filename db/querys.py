@@ -1,42 +1,39 @@
-import db.odoo_connection as odoo_connection
+from db.odoo_connection import connect, call_kw
 
 def getQtdByQuery(query, application):
-    uid, models = odoo_connection.connect()
-    user_ids = findByQuery(query, application, uid, models)
+    """
+    Returns the count of users matching the query.
+    """
+    connect()  # ensure session authenticated
+
+    user_ids = findByQuery(query)
     return len(user_ids)
 
 
-def findByQuery(query, application, uid=None, models=None):
-    if not uid or not models:
-        uid, models = odoo_connection.connect()
+def findByQuery(query):
+    """
+    Returns list of user IDs matching the query.
+    Query is a dictionary like {"login": "test@example.com"}
+    """
+    if not query:
+        domain = []
+    else:
+        domain = [[key, '=', value] for key, value in query.items()]
 
-    domain = [[key, '=', value] for key, value in query.items()]
-
-    user_ids = models.execute_kw(
-        application,  
-        uid,
-        odoo_connection.ODOO_PASSWORD,
-        'res.users',  
-        'search',     
-        [domain]
-    )
+    user_ids = call_kw("res.users", "search", [domain])
     return user_ids
 
 
-def getSomeAttributesByQuery(query, attributes, application):
-    uid, models = odoo_connection.connect()
-    user_ids = findByQuery(query, application, uid, models)
+def getSomeAttributesByQuery(query, attributes):
+    """
+    Returns selected fields of users matching the query.
+    Example: getSomeAttributesByQuery({"login": "test@example.com"}, ["id", "name"])
+    """
+    connect()  # ensure session authenticated
 
+    user_ids = findByQuery(query)
     if not user_ids:
         return []
 
-    records = models.execute_kw(
-        application,
-        uid,
-        odoo_connection.ODOO_PASSWORD,
-        'res.users',
-        'read',
-        [user_ids],
-        {'fields': attributes}
-    )
+    records = call_kw("res.users", "read", [user_ids], {"fields": attributes})
     return records
