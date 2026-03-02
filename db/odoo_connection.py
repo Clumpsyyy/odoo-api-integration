@@ -8,12 +8,13 @@ ODOO_URL = os.getenv("ODOO_URL")
 ODOO_DB = os.getenv("ODOO_DB")
 ODOO_USERNAME = os.getenv("ODOO_USERNAME")
 ODOO_PASSWORD = os.getenv("ODOO_PASSWORD")
+ODOO_API_KEY = os.getenv("ODOO_API_KEY")
 
 session = requests.Session()  # keeps cookies (important)
 uid = None  # global variable to store authenticated UID
 
 def connect():
-    global uid  # Make sure we update the global variable
+    global uid  
 
     url = f"{ODOO_URL}/web/session/authenticate"
 
@@ -32,7 +33,7 @@ def connect():
     result = response.json()
 
     if result.get("result"):
-        uid = result["result"]["uid"]  # ✅ now updates global uid
+        uid = result["result"]["uid"]  
         print("Authenticated successfully! UID:", uid)
         return uid
     else:

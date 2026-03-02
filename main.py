@@ -1,5 +1,6 @@
 from flask import Flask
-from routes import auth_bp, member_bp
+# from routes import auth_bp, member_bp
+from routes import data_bp
 import db.odoo_connection as connection
 from flask_jwt_extended import (
     JWTManager,
@@ -12,15 +13,18 @@ app = Flask(__name__)
 
 app.config["JWT_SECRET_KEY"] = "super-secret-key"
 jwt = JWTManager(app)
-# -------------------------
-# Register Blueprints
-# -------------------------
-app.register_blueprint(auth_bp, url_prefix="/api/v1/auth")
-app.register_blueprint(member_bp, url_prefix="/api/v1/membership")
 
-# -------------------------
-# Authenticate Odoo Once
-# -------------------------
+# Register Blueprints
+# app.register_blueprint(auth_bp, url_prefix="/api/v1/auth")
+# app.register_blueprint(member_bp, url_prefix="/api/v1/membership")
+app.register_blueprint(data_bp, url_prefix="/api/v1/log")
+
+#This comment is intended for integration
+# app.use(cors({
+#   origin: "https://your-frontend.vercel.app"}))
+
+
+# Authenticate Odoo
 try:
     uid = connection.connect() 
     if uid:

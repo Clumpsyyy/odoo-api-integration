@@ -1,63 +1,35 @@
 from flask import abort, Blueprint, Flask, request, jsonify
-import controllers.v1.auth.auth as auth
-import controllers.v1.member as member
+import controllers.v1.log as log
 import utils.exception_messages as exception_messages
 import utils.validator as validator
 from flask_jwt_extended import jwt_required, get_jwt_identity
+from limits import RateLimitItemPerSecond
+from limits.strategies import FixedWindowRateLimiter
+from limits.storage import MemoryStorage
 
-auth_bp = Blueprint('auth_bp', __name__)
+data_bp = Blueprint('data_bp', __name__)
 
-# @app_blueprint.route("/onboarding")
-# def defaultRoute():
-#     return "Yes, it works!"
+storage = MemoryStorage()
+limiter = FixedWindowRateLimiter(storage)
+limit = RateLimitItemPerSecond(1) 
 
-# @app_blueprint.before_request
-# def verifyToken():
-#     if request.path != "/itWorks":
-#         token = request.headers.get("authorization")
-#         validator.validateTokenBeforeRequest(token)
+@data_bp.route("/create", methods=['POST'])
+def createData():
+    if not limiter.hit(limit):
+        return jsonify({"error": "Too many requests"}), 429
+    result, status = log.createUserData(request.json)
+    return jsonify({"user": result}), status
 
-#Sign Up Endpoint
-@auth_bp.route("/signup", methods=['POST'])
-def createNewUser():
-    response = auth.signup(request.json)
-    return jsonify(response), 201
+@data_bp.route("/createTransaction", methods=['POST'])
+def createTransaction():
+    if not limiter.hit(limit):
+        return jsonify({"error": "Too many requests"}), 429
+    result, status = log.createTransaction(request.json)
+    return jsonify({"Transaction Details": result}), status
 
-#Sign In Endpoint
-@auth_bp.route("/login", methods=['POST'])
-def login():
-    response = auth.login(request.json)
-    return jsonify(response), 201
-    # return jsonify({"user": auth.login(request.json) and access_token})
-
-member_bp = Blueprint('member_bp', __name__)
-
-#Check List of member Endpoint
-@member_bp.route("/check", methods=['GET'])
-@jwt_required()
-def showMember():
-    result = member.ShowMember()
-    return jsonify({"user": result})
-
-#Add member/ Create member Endpoint
-@member_bp.route("/add", methods=['POST'])
-def addMember():
-    result = member.AddMember(request.json)
-    return jsonify({"user": result})
-
-#Update member endpoint
-@member_bp.route("/update", methods=['PUT'])
-def updateMember(): 
-    result = member.UpdateMember(request.json)
-    return jsonify({"user": result})
-
-#Delete Member endpoint
-@member_bp.route("/delete", methods=['DELETE'])
-def deleteMember():
-    result = member.DeleteMember(request.json)
-    return jsonify({"user": result})
-
-#Error Handling Endpoint
-@member_bp.errorhandler(404)
-def errorHandler(error):
-    return error
+@data_bp.route("/GetTransaction", methods=['GET'])
+def getTransaction():
+    if not limiter.hit(limit):
+        return jsonify({"error": "Too many requests"}), 429
+    result, status = log.getTransaction(request.json)
+    return jsonify({"Transaction Received by the system": result}), status
