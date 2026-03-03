@@ -1,61 +1,10 @@
 from flask import request, Flask, jsonify
 import requests
-from db.odoo_connection import ODOO_DB,uid,ODOO_API_KEY, ODOO_URL, connect
+from db.odoo_connection import ODOO_DB,uid,ODOO_API_KEY, ODOO_URL, connect, call_kw, session
+from datetime import datetime
+import re
+from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
 
-def createUserData(requestJson):
-
-    name = requestJson.get("name")
-    email = requestJson.get("email")
-    phone = requestJson.get("phone")
-
-    if not name or len(name) < 2:
-        return validateUserInput()
-
-    if not email or "@" not in email:
-        return {"error": "Invalid email"}, 400
-
-    if not phone:
-        return {"error": "Phone is required"}, 400
-
-    uid = connect()
-
-    if not uid:
-        return {"error": "Authentication failed"}, 500
-
-    payload = {
-        "jsonrpc": "2.0",
-        "method": "call",
-        "params": {
-            "service": "object",
-            "method": "execute_kw",
-            "args": [
-                ODOO_DB,
-                uid,
-                ODOO_API_KEY,
-                "res.partner",
-                "create",
-                [{
-                    "name": name,
-                    "email": email,
-                    "phone": phone,
-                    "category_id": [(6, 0, [3])]
-                }]
-            ]
-        },
-        "id": 2
-    }
-
-    response = requests.post(f"{ODOO_URL}/jsonrpc", json=payload)
-    result = response.json()
-
-    if "error" in result:
-        return {"error": result["error"]}, 500
-
-    return {
-        "message": "Contact created successfully",
-        "partner_id": result.get("result")
-    }, 201
-    
 def createTransaction(requestJson):
 
     accountNumber = requestJson.get("accountNumber")
@@ -124,31 +73,29 @@ def createTransaction(requestJson):
 
     journal_id = journal_response["result"][0]["id"]
     print("test journal_id", journal_id)
-    
+        
     search_method_payload = {
-    "jsonrpc": "2.0",
-    "method": "call",
-    "params": {
-        "service": "object",
-        "method": "execute_kw",
-        "args": [
-            ODOO_DB,
-            uid,
-            ODOO_API_KEY,
-            "account.payment.method.line",
-            "search_read",
-            [[
-                ["journal_id", "=", journal_id],  # bank journal
-                ["name", "=", "Manual"],
-                ["active", "=", True],
-                ["payment_type", "=", "inbound"]  # for customer payments
-            ]],
-            {"fields": ["id", "name"]}
-        ]
-    },
-    "id": 10
-}
-
+        "jsonrpc": "2.0",
+        "method": "call",
+        "params": {
+            "service": "object",
+            "method": "execute_kw",
+            "args": [
+                ODOO_DB,
+                uid,
+                ODOO_API_KEY,
+                "account.payment.method.line",
+                "search_read",
+                [  
+                [
+                        ["journal_id", "=", journal_id]
+                    ]
+                ],
+                {"fields": ["id", "name", "payment_type"]}
+            ]
+        },
+        "id": 10
+    }
     method_response = requests.post(f"{ODOO_URL}/jsonrpc", json=search_method_payload).json()
 
     if not method_response.get("result"):
@@ -156,6 +103,8 @@ def createTransaction(requestJson):
 
     payment_method_line_id = method_response["result"][0]["id"]
     print("Using payment method line ID:", payment_method_line_id)
+    
+    payment_date = datetime.today().strftime('%Y-%m-%d')
     
     payment_payload = {
         "jsonrpc": "2.0",
@@ -174,7 +123,7 @@ def createTransaction(requestJson):
                     "partner_type": "customer",
                     "partner_id": partner_id,
                     "amount": float(amount),
-                    "date": "2026-03-02",
+                    "date": payment_date,
                     "journal_id": journal_id, 
                     "payment_method_line_id": payment_method_line_id,  
                 }]
@@ -215,3 +164,25 @@ def createTransaction(requestJson):
         "message": "Payment successfully created and posted",
         "payment_id": payment_id
     }, 201
+    
+def getTransaction(payment_id):
+    payments = call_kw(
+        "account.payment",
+        "search_read",
+        [[["id", "=", payment_id]]],
+        {"fields": ["id", "partner_id", "amount", "state"]}
+    )
+
+    if not payments:
+        return {"error": "Payment not found"}, 404
+
+    payment = payments[0]
+    partner_id, partner_name = payment["partner_id"]
+
+    return {
+        "payment_id": payment["id"],
+        "partner_id": partner_id,
+        "partner_name": partner_name,
+        "amount": payment["amount"],
+        "state": payment["state"]
+    }, 200
