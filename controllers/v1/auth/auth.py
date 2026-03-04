@@ -26,7 +26,7 @@ def RegisterAccount(requestJson):
     # Create partner
     partner_id = call_kw("res.partner", "create", args=[{"name": name, "phone": phone}])
 
-    # Create user (without groups_id)
+    # Create user 
     user_id = call_kw("res.users", "create", args=[{
         "name": name,
         "login": phone,
