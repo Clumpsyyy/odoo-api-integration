@@ -1,6 +1,8 @@
+import os
+import db.odoo_connection as connection
 from flask import Flask
 from routes import auth_bp, data_bp
-import db.odoo_connection as connection
+from datetime import timedelta
 from flask_jwt_extended import (
     JWTManager,
     create_access_token,
@@ -12,6 +14,10 @@ app = Flask(__name__)
 
 app.config["JWT_SECRET_KEY"] = "super-secret-key"
 jwt = JWTManager(app)
+
+app.secret_key = os.environ.get("SECRET_KEY", "dev-secret-key")
+
+app.permanent_session_lifetime = timedelta(minutes=5)
 
 # Register Blueprints
 app.register_blueprint(auth_bp, url_prefix="/api/v1/auth")
