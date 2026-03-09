@@ -1,5 +1,6 @@
 import controllers.v1.auth.auth as auth
 import controllers.v1.transaction as transaction
+import services.checkAdmin as adminCheck
 import utils.exception_messages as exception_messages
 import utils.validator as validator
 from flask import abort, Blueprint, Flask, request, jsonify, session
@@ -44,12 +45,22 @@ def verify_otp():
 
 @auth_bp.route("/login", methods=['POST'])
 def userLogin():
-    print("Request JSON:", request.json)
+    
+    data = request.json
+    print("Request JSON:", data)
+
+    response = adminCheck.checkAdmin()
+    print("response", response)
+
+    if response.get("status") != "Active":
+        return jsonify({"error": "Server is down"}), 403
+    
     if not limiter.hit(limit):
         return jsonify({"error": "Too many requests"}), 429
 
     result, status = auth.LoginAccount(request.json)
     print("request", request.json)
+    
     if not isinstance(result, dict):
         result = {"error": "Unexpected server response"}
 
