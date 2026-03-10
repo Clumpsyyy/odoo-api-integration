@@ -10,8 +10,8 @@ ODOO_USERNAME = os.getenv("ODOO_USERNAME")
 ODOO_PASSWORD = os.getenv("ODOO_PASSWORD")
 ODOO_API_KEY = os.getenv("ODOO_API_KEY")
 
-session = requests.Session()  # keeps cookies (important)
-uid = None  # global variable to store authenticated UID
+session = requests.Session()  
+uid = None 
 
 def connect():
     global uid  
