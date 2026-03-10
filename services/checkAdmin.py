@@ -4,11 +4,11 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-client_id = 7
+CLIENT_ID= os.environ.get("CLIENT_ID")
 BASE_URL_CHECKING = os.environ.get("BASE_URL_CHECKING")
 
 def checkAdmin():
-    url = f"{BASE_URL_CHECKING}/{client_id}"
+    url = f"{BASE_URL_CHECKING}/{CLIENT_ID}"
     
     try: 
         response = requests.get(url)
